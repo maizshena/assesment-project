@@ -1,4 +1,3 @@
-// app/(user)/explore/page.jsx
 "use client";
 
 import { Search, Bell, Filter, Grid, List, BookOpen, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
@@ -101,7 +100,7 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
+
       <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-b border-gray-200 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-6">
@@ -132,7 +131,6 @@ export default function ExplorePage() {
       </header>
 
       <main className="flex-1 pt-24 pb-12 px-6 max-w-7xl mx-auto w-full">
-        {/* Page Title & Stats */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -145,19 +143,18 @@ export default function ExplorePage() {
               </p>
             </div>
 
-            {/* Sort Dropdown */}
             <div className="flex items-center gap-3">
-              <Filter className="w-5 h-5 text-gray-500" />
+              <Filter className="w-6 h-6 text-gray-500" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer"
               >
-                <option value="newest">Terbaru</option>
-                <option value="oldest">Terlama</option>
-                <option value="title_asc">Judul (A-Z)</option>
-                <option value="title_desc">Judul (Z-A)</option>
-                <option value="author">Penulis (A-Z)</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="title_asc">Title (A-Z)</option>
+                <option value="title_desc">Title (Z-A)</option>
+                <option value="author">Author (A-Z)</option>
               </select>
             </div>
           </div>
@@ -167,7 +164,7 @@ export default function ExplorePage() {
           {showLeftArrow && (
             <button
               onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow-lg rounded-full border-2 border-gray-200 hover:indigo-500 hover:bg-indigo-50 transition-all hover:scale-110"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow-lg rounded-full border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all hover:scale-110"
             >
               <ChevronLeft className="w-5 h-5 text-gray-700" />
             </button>
@@ -183,16 +180,16 @@ export default function ExplorePage() {
               <button
                 key={category.id}
                 onClick={() => setActiveTab(category.id)}
-                className={`px-5 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${
                   activeTab === category.id
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-105"
                     : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300"
                 }`}
               >
-                <span className="text-lg">{category.icon}</span>
-                <span className="text-sm">{category.label}</span>
+                <span className="text-xl">{category.icon}</span>
+                <span>{category.label}</span>
                 <span
-                  className={`min-w-[24px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === category.id
                       ? "bg-white/20 text-white"
                       : "bg-gray-100 text-gray-600"
@@ -204,7 +201,6 @@ export default function ExplorePage() {
             ))}
           </div>
 
-          {/* Right Arrow */}
           {showRightArrow && (
             <button
               onClick={() => scroll("right")}
@@ -215,7 +211,6 @@ export default function ExplorePage() {
           )}
         </div>
 
-        {/* Books Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -266,7 +261,6 @@ export default function ExplorePage() {
               ))}
             </div>
 
-            {/* Results Info */}
             <div className="mt-12 text-center">
               <p className="text-gray-600 font-medium">
                 Menampilkan <span className="font-bold text-gray-900">{books.length}</span> buku
