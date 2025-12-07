@@ -6,28 +6,38 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Protect admin routes
+    // Admin routes - butuh role admin
     if (path.startsWith("/admin") && token?.role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    // Protect user routes
-    if (path.startsWith("/dashboard") || path.startsWith("/books") || 
-        path.startsWith("/loans") || path.startsWith("/wishlist")) {
-      if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url));
-      }
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname;
+        
+        // Login/register pages bisa diakses semua orang
+        if (path === '/login' || path === '/register') {
+          return true;
+        }
+        
+        // Protected pages butuh authentication
+        return !!token;
+      },
     },
   }
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/books/:path*", "/loans/:path*", "/wishlist/:path*"],
+  matcher: [
+    "/dashboard/:path*", 
+    "/admin/:path*", 
+    "/books/:path*", 
+    "/loans/:path*", 
+    "/wishlist/:path*",
+    "/login",
+    "/register"
+  ],
 };

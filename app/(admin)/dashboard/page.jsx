@@ -1,12 +1,13 @@
+// app/(admin)/dashboard/page.jsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { BookOpen, BookMarked, FolderOpen, Users, FileText, Clock, Check, XCircle } from 'lucide-react';
 
-export default function AdminDashboard() {
+export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState(null);
@@ -18,14 +19,16 @@ export default function AdminDashboard() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user?.role !== 'admin') {
-      router.push('/dashboard');
+      router.push('/dashboard'); // non-admin redirect
     } else if (status === 'authenticated') {
       fetchDashboardData();
     }
-  }, [status, session, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, session]);
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
       const [statsRes, loansRes, pendingRes] = await Promise.all([
         fetch('/api/stats'),
         fetch('/api/loans'),
@@ -37,10 +40,10 @@ export default function AdminDashboard() {
       const pendingData = await pendingRes.json();
 
       setStats(statsData);
-      setRecentLoans(loansData.loans.slice(0, 5));
-      setPendingLoans(pendingData.loans);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      setRecentLoans(loansData.loans?.slice(0, 6) || []);
+      setPendingLoans(pendingData.loans || []);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -55,8 +58,8 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
-        alert('Peminjaman disetujui!');
-        fetchDashboardData();
+        // small UI feedback then refresh
+        await fetchDashboardData();
       }
     } catch (error) {
       console.error('Error approving loan:', error);
@@ -74,8 +77,7 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
-        alert('Peminjaman ditolak!');
-        fetchDashboardData();
+        await fetchDashboardData();
       }
     } catch (error) {
       console.error('Error rejecting loan:', error);
@@ -84,168 +86,209 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="text-xl">Loading...</div>
-        </div>
-      </>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-lg text-gray-600">Memuat dashboard...</div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">👨‍💼 Admin Dashboard</h1>
+    <div className="space-y-6 pb-10 pr-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Admin Dashboard</h2>
+          <p className="text-sm text-gray-500 mt-1">Ringkasan aktivitas dan pengelolaan perpustakaan.</p>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-blue-600 text-3xl mb-2">📚</div>
-              <div className="text-2xl font-bold">{stats?.totalBooks || 0}</div>
-              <div className="text-gray-600">Total Buku</div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-green-600 text-3xl mb-2">👥</div>
-              <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-              <div className="text-gray-600">Total Users</div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-purple-600 text-3xl mb-2">📋</div>
-              <div className="text-2xl font-bold">{stats?.activeLoans || 0}</div>
-              <div className="text-gray-600">Peminjaman Aktif</div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-yellow-600 text-3xl mb-2">⏳</div>
-              <div className="text-2xl font-bold">{stats?.pendingLoans || 0}</div>
-              <div className="text-gray-600">Pending Approval</div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Link
-              href="/collections"
-              className="bg-blue-600 text-white p-6 rounded-lg shadow-md hover:bg-blue-700 transition text-center"
-            >
-              <div className="text-4xl mb-2">📚</div>
-              <div className="text-xl font-bold">Manage Books</div>
-              <div className="text-sm mt-2">Tambah, edit, hapus buku</div>
-            </Link>
-
-            <Link
-              href="/loan_management"
-              className="bg-green-600 text-white p-6 rounded-lg shadow-md hover:bg-green-700 transition text-center"
-            >
-              <div className="text-4xl mb-2">📋</div>
-              <div className="text-xl font-bold">Manage Loans</div>
-              <div className="text-sm mt-2">Approve & manage peminjaman</div>
-            </Link>
-
-            <div className="bg-purple-600 text-white p-6 rounded-lg shadow-md text-center">
-              <div className="text-4xl mb-2">📊</div>
-              <div className="text-xl font-bold">Reports</div>
-              <div className="text-sm mt-2">Coming soon...</div>
-            </div>
-          </div>
-
-          {/* Pending Approvals */}
-          {pendingLoans.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-              <h2 className="text-2xl font-bold mb-4">⏳ Pending Approvals ({pendingLoans.length})</h2>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3">User</th>
-                      <th className="text-left py-3">Buku</th>
-                      <th className="text-left py-3">Tanggal Pinjam</th>
-                      <th className="text-left py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingLoans.map((loan) => (
-                      <tr key={loan.id} className="border-b">
-                        <td className="py-3">{loan.user_name}</td>
-                        <td className="py-3">{loan.title}</td>
-                        <td className="py-3">{new Date(loan.loan_date).toLocaleDateString('id-ID')}</td>
-                        <td className="py-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleApprove(loan.id)}
-                              className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
-                            >
-                              ✓ Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(loan.id)}
-                              className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700"
-                            >
-                              ✗ Reject
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Recent Loans */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Recent Loans</h2>
-            
-            {recentLoans.length === 0 ? (
-              <p className="text-gray-600">Belum ada peminjaman</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3">User</th>
-                      <th className="text-left py-3">Buku</th>
-                      <th className="text-left py-3">Tanggal</th>
-                      <th className="text-left py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentLoans.map((loan) => (
-                      <tr key={loan.id} className="border-b">
-                        <td className="py-3">{loan.user_name}</td>
-                        <td className="py-3">{loan.title}</td>
-                        <td className="py-3">{new Date(loan.loan_date).toLocaleDateString('id-ID')}</td>
-                        <td className="py-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm ${
-                              loan.status === 'approved'
-                                ? 'bg-green-100 text-green-700'
-                                : loan.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : loan.status === 'returned'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
-                          >
-                            {loan.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-3">
+          <Link href="/(admin)/collections" className="inline-flex items-center gap-2 px-4 py-2 text-white bg-emerald-600 rounded-lg shadow-sm hover:shadow-md">
+            <BookMarked className="w-4 h-4 text-white" /> Books Collection Management
+          </Link>
+          <Link href="/(admin)/loan_management" className="inline-flex items-center gap-2 px-4 py-2 text-white bg-emerald-600 rounded-lg shadow-l hover:shadow-md">
+            <FolderOpen className="w-4 h-4 text-white" /> Loans Management
+          </Link>
         </div>
       </div>
-    </>
+
+      {/* Stats */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={BookOpen} label="Total Buku" value={stats?.totalBooks ?? 0} />
+        <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} />
+        <StatCard icon={FileText} label="Peminjaman Aktif" value={stats?.activeLoans ?? 0} />
+        <StatCard icon={Clock} label="Pending Approval" value={stats?.pendingLoans ?? 0} />
+      </section>
+
+      {/* Quick Actions */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <QuickCard href="/collections" title="Manage Books" desc="Tambah, edit, dan hapus buku" />
+        <QuickCard href="/loan_management" title="Manage Loans" desc="Approve & manage peminjaman" />
+        <div className="rounded-2xl p-5 bg-white/60 border border-dashed border-gray-200 text-gray-500 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold">Reports (coming soon)</h3>
+            <p className="text-sm text-gray-400 mt-1">Analytics akan tersedia nanti</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Pending Approvals & Recent Loans */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-2xl bg-white/70 border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">Pending Approvals</h3>
+            <p className="text-sm text-gray-500 mt-1">{pendingLoans.length} peminjaman menunggu approval</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px]">
+              <thead className="text-left text-xs text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th className="px-6 py-3">User</th>
+                  <th className="px-6 py-3">Buku</th>
+                  <th className="px-6 py-3">Tanggal Pinjam</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {pendingLoans.map((loan) => (
+                  <tr key={loan.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3"/></svg>
+                        </div>
+                        <div className="font-medium text-gray-800">{loan.user_name}</div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-600">{loan.title}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(loan.loan_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => handleApprove(loan.id)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition"
+                        >
+                          <Check className="w-4 h-4" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(loan.id)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-rose-500 text-white text-sm rounded-lg hover:bg-rose-600 transition"
+                        >
+                          <XCircle className="w-4 h-4" /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {pendingLoans.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Tidak ada peminjaman pending.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white/70 border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Loans</h3>
+            <p className="text-sm text-gray-500 mt-1">Latest borrowing activities</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px]">
+              <thead className="text-left text-xs text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th className="px-6 py-3">User</th>
+                  <th className="px-6 py-3">Buku</th>
+                  <th className="px-6 py-3">Tanggal</th>
+                  <th className="px-6 py-3">Status</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {recentLoans.map((loan) => (
+                  <tr key={loan.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3"/></svg>
+                        </div>
+                        <div className="font-medium text-gray-800">{loan.user_name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{loan.title}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(loan.loan_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusPill status={loan.status} />
+                    </td>
+                  </tr>
+                ))}
+                {recentLoans.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Belum ada peminjaman.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer className="pt-60 text-sm text-gray-400 py-6">© {new Date().getFullYear()} Puskata — Admin Panel</footer>
+    </div>
   );
+}
+
+/* small helper components */
+function StatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-2xl bg-white/70 border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <Icon className="w-5 h-5 text-gray-700" />
+          </div>
+          <div>
+            <p className="text-2xl font-semibold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+            <p className="text-sm text-gray-500 mt-1">{label}</p>
+          </div>
+        </div>
+        <div className="text-xs text-gray-400">+2.4%</div>
+      </div>
+    </div>
+  );
+}
+
+function QuickCard({ href, title, desc }) {
+  return (
+    <Link href={href} className="block rounded-2xl p-5 bg-white/70 border border-gray-100 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+          <svg className="w-6 h-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7h18" /></svg>
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <p className="text-sm text-gray-500 mt-1">{desc}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function StatusPill({ status }) {
+  const map = {
+    approved: 'bg-emerald-100 text-emerald-700',
+    pending: 'bg-amber-100 text-amber-700',
+    returned: 'bg-sky-100 text-sky-700',
+  };
+  const cls = map[status] ?? 'bg-rose-100 text-rose-700';
+  return <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${cls}`}>{(status || '').toString().charAt(0).toUpperCase() + (status || '').toString().slice(1)}</span>;
 }

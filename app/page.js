@@ -1,10 +1,8 @@
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 
 export default function Home() {
   return (
     <>
-      <Navbar />
       <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto px-4 py-20 text-center">
           <h1 className="text-5xl font-bold mb-6 text-gray-800">

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 
 export default function AdminReportsPage() {
   const { data: session, status } = useSession();
@@ -36,7 +35,6 @@ export default function AdminReportsPage() {
   if (loading) {
     return (
       <>
-        <Navbar />
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-xl">Loading...</div>
         </div>
@@ -46,7 +44,6 @@ export default function AdminReportsPage() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-8">📊 Reports & Analytics</h1>

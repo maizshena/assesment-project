@@ -1,21 +1,34 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Navbar from '@/components/Navbar';
+import { useRouter } from 'next/navigation';
+import { 
+  BookOpen, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  Calendar,
+  DollarSign,
+  Loader2,
+  RotateCcw
+} from 'lucide-react';
 
 export default function UserLoansPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [loans, setLoans] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (session) {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated') {
       fetchLoans();
     }
-  }, [session, filter]);
+  }, [status, session, filter, router]);
 
   const fetchLoans = async () => {
     try {
@@ -41,140 +54,216 @@ export default function UserLoansPage() {
     const due = new Date(dueDate);
     const returned = new Date(returnDate);
     const daysLate = Math.max(0, Math.floor((returned - due) / (1000 * 60 * 60 * 24)));
-    return daysLate * 5000; // Rp 5000 per hari
+    return daysLate * 5000;
+  };
+
+  const getStatusInfo = (status) => {
+    switch(status) {
+      case 'approved':
+        return { 
+          label: 'Borrowed', 
+          color: 'bg-emerald-100 text-emerald-700', 
+          icon: CheckCircle 
+        };
+      case 'pending':
+        return { 
+          label: 'Pending Approval', 
+          color: 'bg-amber-100 text-amber-700', 
+          icon: Clock 
+        };
+      case 'returned':
+        return { 
+          label: 'Returned', 
+          color: 'bg-sky-100 text-sky-700', 
+          icon: RotateCcw 
+        };
+      case 'rejected':
+        return { 
+          label: 'Rejected', 
+          color: 'bg-rose-100 text-rose-700', 
+          icon: XCircle 
+        };
+      default:
+        return { 
+          label: status, 
+          color: 'bg-gray-100 text-gray-700', 
+          icon: AlertCircle 
+        };
+    }
   };
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="text-xl">Loading...</div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
+          <div className="text-lg text-gray-600">Loading loans...</div>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">My Loans</h1>
-
-          {/* Filter */}
-          <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                Semua
-              </button>
-              <button
-                onClick={() => setFilter('pending')}
-                className={`px-4 py-2 rounded ${filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-200'}`}
-              >
-                Pending
-              </button>
-              <button
-                onClick={() => setFilter('approved')}
-                className={`px-4 py-2 rounded ${filter === 'approved' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}
-              >
-                Approved
-              </button>
-              <button
-                onClick={() => setFilter('returned')}
-                className={`px-4 py-2 rounded ${filter === 'returned' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                Returned
-              </button>
-            </div>
-          </div>
-
-          {/* Loans Table */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            {loans.length === 0 ? (
-              <div className="p-8 text-center text-gray-600">
-                Tidak ada data peminjaman
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buku</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Pinjam</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batas Kembali</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Denda</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {loans.map((loan) => {
-                      const isOverdue = new Date(loan.due_date) < new Date() && loan.status === 'approved';
-                      const fine = isOverdue ? calculateFine(loan.due_date, null) : loan.fine;
-
-                      return (
-                        <tr key={loan.id}>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                {loan.cover_image ? (
-                                  <img src={loan.cover_image} alt={loan.title} className="h-10 w-10 object-cover rounded" />
-                                ) : (
-                                  <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">📕</div>
-                                )}
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{loan.title}</div>
-                                <div className="text-sm text-gray-500">{loan.author}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
-                            {new Date(loan.loan_date).toLocaleDateString('id-ID')}
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            <span className={isOverdue ? 'text-red-600 font-bold' : 'text-gray-500'}>
-                              {new Date(loan.due_date).toLocaleDateString('id-ID')}
-                              {isOverdue && ' (Terlambat!)'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                loan.status === 'approved'
-                                  ? 'bg-green-100 text-green-800'
-                                  : loan.status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : loan.status === 'returned'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {loan.status === 'approved' ? 'Disetujui' :
-                               loan.status === 'pending' ? 'Menunggu' :
-                               loan.status === 'returned' ? 'Dikembalikan' : 'Ditolak'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium">
-                            {fine > 0 ? (
-                              <span className="text-red-600">Rp {fine.toLocaleString()}</span>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+    <div className="space-y-6 pb-10 pr-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">My Loans</h2>
+          <p className="text-sm text-gray-500 mt-1">Track your borrowed books and due dates</p>
         </div>
       </div>
-    </>
+
+      {/* Filter Tabs */}
+      <section className="rounded-2xl bg-white/70 border border-gray-100 shadow-sm p-4">
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { value: 'all', label: 'All Loans', icon: BookOpen },
+            { value: 'pending', label: 'Pending', icon: Clock },
+            { value: 'approved', label: 'Borrowed', icon: CheckCircle },
+            { value: 'returned', label: 'Returned', icon: RotateCcw },
+            { value: 'rejected', label: 'Rejected', icon: XCircle },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setFilter(tab.value)}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition font-medium text-sm ${
+                  filter === tab.value
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Loans Table */}
+      <section className="rounded-2xl bg-white/70 border border-gray-100 shadow-sm overflow-hidden">
+        {loans.length === 0 ? (
+          <div className="p-12 text-center">
+            <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-500 font-medium mb-2">No loans found</p>
+            <p className="text-sm text-gray-400">
+              {filter === 'all' 
+                ? "You haven't borrowed any books yet" 
+                : `No ${filter} loans found`}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50/50">
+                <tr>
+                  <th className="px-6 py-3">Book</th>
+                  <th className="px-6 py-3">Loan Date</th>
+                  <th className="px-6 py-3">Due Date</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Fine</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loans.map((loan) => {
+                  const isOverdue = new Date(loan.due_date) < new Date() && loan.status === 'approved';
+                  const fine = isOverdue ? calculateFine(loan.due_date, null) : loan.fine;
+                  const statusInfo = getStatusInfo(loan.status);
+                  const StatusIcon = statusInfo.icon;
+
+                  return (
+                    <tr key={loan.id} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {loan.cover_image ? (
+                            <img
+                              src={loan.cover_image}
+                              alt={loan.title}
+                              className="w-12 h-16 object-cover rounded border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-12 h-16 bg-gray-100 rounded flex items-center justify-center">
+                              <BookOpen className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{loan.title}</div>
+                            <div className="text-sm text-gray-500">{loan.author}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          {new Date(loan.loan_date).toLocaleDateString('id-ID', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-rose-600 font-semibold' : 'text-gray-600'}`}>
+                          <Clock className={`w-4 h-4 ${isOverdue ? 'text-rose-600' : 'text-gray-400'}`} />
+                          <div>
+                            {new Date(loan.due_date).toLocaleDateString('id-ID', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}
+                            {isOverdue && (
+                              <div className="text-xs flex items-center gap-1 mt-0.5">
+                                <AlertCircle className="w-3 h-3" /> Overdue!
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusInfo.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {fine > 0 ? (
+                          <div className="flex items-center gap-1 text-sm font-semibold text-rose-600">
+                            <DollarSign className="w-4 h-4" />
+                            Rp {fine.toLocaleString()}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Info Box */}
+      {loans.some(loan => loan.status === 'approved') && (
+        <section className="rounded-2xl bg-sky-50 border border-sky-200 p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-sky-900 mb-1">Important Reminder</p>
+              <p className="text-xs text-sky-700">
+                Please return books before the due date to avoid fines. Late fees are Rp 5,000 per day.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <footer className="pt-60 text-sm text-gray-400 py-6">
+        © {new Date().getFullYear()} Puskata — My Loans
+      </footer>
+    </div>
   );
 }

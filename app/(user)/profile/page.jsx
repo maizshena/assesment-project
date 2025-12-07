@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import { User, Mail, Lock, Camera, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { User, Mail, Lock, Camera, CheckCircle, XCircle, Upload, X } from 'lucide-react';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -51,13 +50,11 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       showToast('Please select an image file', 'error');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showToast('Image size must be less than 5MB', 'error');
       return;
@@ -66,11 +63,9 @@ export default function ProfilePage() {
     try {
       setUploading(true);
 
-      // Create FormData
       const formData = new FormData();
       formData.append('file', file);
 
-      // Upload to your API endpoint
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -96,7 +91,6 @@ export default function ProfilePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate passwords if changing
     if (formData.newPassword) {
       if (!formData.currentPassword) {
         showToast('Current password is required to change password', 'error');
@@ -133,7 +127,7 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (response.ok) {
-        showToast('✅ Profile updated successfully!', 'success');
+        showToast('Profile updated successfully!', 'success');
         
         setFormData({
           ...formData,
@@ -142,7 +136,6 @@ export default function ProfilePage() {
           confirmPassword: '',
         });
 
-        // If email or password changed, sign out and redirect
         if (formData.newEmail || formData.newPassword) {
           setTimeout(() => {
             showToast('Please login again with your new credentials', 'success');
@@ -151,7 +144,6 @@ export default function ProfilePage() {
             }, 2000);
           }, 1500);
         } else {
-          // Reload session to reflect changes
           setTimeout(() => {
             window.location.reload();
           }, 1500);
@@ -169,27 +161,22 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <div className="text-xl text-gray-600">Loading profile...</div>
-          </div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <div className="text-lg text-gray-600">Loading profile...</div>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
     <>
-      <Navbar />
-
       {/* Toast Notification */}
       {toast.show && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
           <div className={`px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
-            toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
           }`}>
             {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
             <span>{toast.message}</span>
@@ -197,173 +184,178 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-3 mb-8">
-            <User className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">My Profile</h1>
+      <div className="space-y-6 pb-10 pr-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">My Profile</h2>
+            <p className="text-sm text-gray-500 mt-1">Manage your personal information and settings</p>
           </div>
+        </div>
 
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Profile Picture Section */}
-                <div className="text-center pb-4">
-                  <div className="relative inline-block">
-                    {imagePreview ? (
-                      <img
-                        src={imagePreview}
-                        alt="Profile"
-                        className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 mx-auto"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl text-white border-4 border-blue-500 mx-auto">
-                        {formData.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    
-                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition">
-                      <Camera className="w-5 h-5" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                        disabled={uploading}
-                      />
+        {/* Profile Form */}
+        <section className="rounded-2xl bg-white/70 border border-gray-100 shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit}>
+            {/* Profile Picture Section */}
+            <div className="p-8 text-center border-b border-gray-100 bg-gradient-to-b from-gray-50/50 to-transparent">
+              <div className="relative inline-block">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Profile"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-emerald-500 mx-auto shadow-lg"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-4xl text-white border-4 border-emerald-500 mx-auto shadow-lg font-bold">
+                    {formData.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                
+                <label className="absolute bottom-0 right-0 bg-emerald-600 text-white p-3 rounded-full cursor-pointer hover:bg-emerald-700 shadow-lg transition-all hover:scale-110">
+                  <Camera className="w-5 h-5" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+              
+              {uploading && (
+                <div className="mt-4 text-sm text-emerald-600 flex items-center justify-center gap-2">
+                  <Upload className="w-4 h-4 animate-bounce" />
+                  <span>Uploading image...</span>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-500 mt-4">Click camera icon to change profile picture</p>
+              <p className="text-xs text-gray-400 mt-1">Maximum size: 5MB</p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2 pb-2 border-b border-gray-100">
+                  <User className="w-5 h-5 text-emerald-600" />
+                  Basic Information
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name <span className="text-rose-500">*</span>
                     </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
                   </div>
-                  
-                  {uploading && (
-                    <div className="mt-3 text-sm text-blue-600 flex items-center justify-center gap-2">
-                      <Upload className="w-4 h-4 animate-bounce" />
-                      <span>Uploading image...</span>
-                    </div>
-                  )}
-                  
-                  <p className="text-sm text-gray-500 mt-3">Click camera icon to change profile picture</p>
-                  <p className="text-xs text-gray-400 mt-1">Maximum size: 5MB</p>
-                </div>
 
-                {/* Basic Info */}
-                <div>
-                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Basic Information
-                  </h2>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Mail className="inline w-4 h-4 mr-1" />
+                      Current Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500 mt-1.5">Your current email address</p>
+                  </div>
 
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        <Mail className="inline w-4 h-4 mr-1" />
-                        Current Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-100"
-                        disabled
-                      />
-                      <p className="text-sm text-gray-500 mt-1">Your current email address</p>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Mail className="inline w-4 h-4 mr-1" />
+                      New Email (optional)
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.newEmail}
+                      onChange={(e) => setFormData({ ...formData, newEmail: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Leave blank to keep current"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        <Mail className="inline w-4 h-4 mr-1" />
-                        New Email (optional)
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.newEmail}
-                        onChange={(e) => setFormData({ ...formData, newEmail: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Leave blank to keep current email"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">Role</label>
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
-                        session?.user?.role === 'admin' 
-                          ? 'bg-purple-100 text-purple-700' 
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        <User className="w-4 h-4" />
-                        <span className="capitalize font-semibold">{session?.user?.role || 'user'}</span>
-                      </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
+                      session?.user?.role === 'admin' 
+                        ? 'bg-purple-100 text-purple-700' 
+                        : 'bg-sky-100 text-sky-700'
+                    }`}>
+                      <User className="w-4 h-4" />
+                      <span className="capitalize font-semibold">{session?.user?.role || 'user'}</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Change Password */}
-                <div className="pt-4">
-                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <Lock className="w-5 h-5" />
-                    Change Password
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Leave blank if you don't want to change password
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.currentPassword}
-                        onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter current password"
-                      />
-                    </div>
+              {/* Change Password */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2 pb-2 border-b border-gray-100">
+                  <Lock className="w-5 h-5 text-emerald-600" />
+                  Change Password
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Leave blank if you don't want to change password
+                </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.currentPassword}
+                      onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Enter current password"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.newPassword}
-                        onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Minimum 6 characters"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.newPassword}
+                      onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Min 6 characters"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-medium">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Re-enter new password"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Re-enter password"
+                    />
                   </div>
                 </div>
+              </div>
 
+              {/* Submit Button */}
+              <div className="pt-4">
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition shadow-sm hover:shadow-md"
                 >
                   {saving ? (
                     <>
@@ -377,20 +369,38 @@ export default function ProfilePage() {
                     </>
                   )}
                 </button>
-              </form>
+              </div>
             </div>
+          </form>
+        </section>
 
-            {/* Info Box */}
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">📝 Note:</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• If you change your email or password, you'll need to login again</li>
-                <li>• Profile picture should be less than 5MB</li>
-                <li>• Password must be at least 6 characters</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        {/* Info Box */}
+        <section className="rounded-2xl bg-sky-50 border border-sky-200 p-5">
+          <h3 className="font-semibold text-sky-900 mb-3 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            Important Notes
+          </h3>
+          <ul className="text-sm text-sky-800 space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="text-sky-600 mt-0.5">•</span>
+              <span>If you change your email or password, you'll need to login again</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-sky-600 mt-0.5">•</span>
+              <span>Profile picture should be less than 5MB in size</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-sky-600 mt-0.5">•</span>
+              <span>Password must be at least 6 characters long</span>
+            </li>
+          </ul>
+        </section>
+
+        <footer className="pt-60 text-sm text-gray-400 py-6">
+          © {new Date().getFullYear()} Puskata — Profile Settings
+        </footer>
       </div>
 
       <style jsx>{`
